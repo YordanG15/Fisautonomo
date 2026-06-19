@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consola autonómica · Shy-Drager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d1014; --panel:#151a21; --panel2:#1b222b; --line:#2a313b;
+    --ink:#e8edf3; --muted:#8a97a6; --faint:#5c6672;
+    --symp:#f5934d; --symp-glow:#ffb780;     /* simpático */
+    --para:#2fd2c0; --para-glow:#74f0e2;      /* parasimpático */
+    --alive:#5fd38a; --dead:#e2574d; --gold:#ecc15c;
+    --no:#7fd6ff;                              /* óxido nítrico */
+    --grey:#525c68;
+    --radius:16px;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 18px 48px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:"Inter",system-ui,sans-serif;color:var(--ink);line-height:1.55;
+    background:
+      radial-gradient(900px 480px at 88% -8%, rgba(47,210,192,.08), transparent 60%),
+      radial-gradient(900px 520px at 5% 105%, rgba(245,147,77,.08), transparent 60%),
+      var(--bg);
+    -webkit-font-smoothing:antialiased;padding:clamp(12px,2.6vw,30px);
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+  .mono{font-family:"Space Mono",monospace}
+
+  /* ---------- header ---------- */
+  .eyebrow{font-family:"Space Mono",monospace;font-size:.7rem;letter-spacing:.26em;
+    text-transform:uppercase;color:var(--muted)}
+  h1{font-family:"Sora",sans-serif;font-weight:800;font-size:clamp(1.7rem,4.6vw,3rem);
+    line-height:1.02;letter-spacing:-.02em;margin:.16em 0 .14em}
+  h1 .br{color:var(--dead)}
+  .lead{color:var(--muted);max-width:66ch;margin:0}
+  .lead b{color:var(--ink);font-weight:600}
+
+  .topbar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;
+    margin-top:20px;padding:14px 16px;background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow)}
+  .master{display:flex;align-items:center;gap:14px}
+  .master .lbl{font-family:"Sora",sans-serif;font-weight:600;font-size:.96rem}
+  .master .lbl small{display:block;font-family:"Space Mono",monospace;font-size:.68rem;
+    color:var(--muted);font-weight:400;letter-spacing:.04em}
+  .switch{position:relative;display:inline-flex;align-items:center;cursor:pointer}
+  .switch input{position:absolute;opacity:0;width:0;height:0}
+  .track{width:58px;height:30px;border-radius:999px;background:#27303a;border:1px solid #38424e;
+    transition:.22s;flex:none}
+  .track::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
+    background:#cdd6df;transition:.22s}
+  .switch input:checked + .track{background:rgba(226,87,77,.45);border-color:var(--dead)}
+  .switch input:checked + .track::after{transform:translateX(28px);background:var(--dead)}
+  .switch input:focus-visible + .track{box-shadow:0 0 0 3px rgba(255,255,255,.3)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-family:"Space Mono",monospace;font-size:.7rem;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .key{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .key.s{background:var(--symp)} .key.p{background:var(--para)} .key.d{background:var(--dead)}
+
+  /* ---------- system tabs + organ pills ---------- */
+  .systabs{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 12px}
+  .systab{font-family:"Sora",sans-serif;font-weight:600;font-size:.9rem;display:flex;align-items:center;gap:8px;
+    background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:9px 15px;border-radius:12px;
+    cursor:pointer;transition:.16s}
+  .systab .ic{font-size:1.05rem}
+  .systab:hover{border-color:#3b4756}
+  .systab[aria-selected="true"]{background:var(--ink);color:#0d1014;border-color:var(--ink)}
+  .pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+  .pill{font-family:"Space Mono",monospace;font-size:.78rem;background:var(--panel2);border:1px solid var(--line);
+    color:var(--muted);padding:7px 13px;border-radius:999px;cursor:pointer;transition:.15s}
+  .pill:hover{border-color:#3b4756;color:var(--ink)}
+  .pill[aria-selected="true"]{background:rgba(236,193,92,.14);border-color:var(--gold);color:var(--gold)}
+
+  /* ---------- via strip (signature) ---------- */
+  .via{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:8px 6px 4px;margin-bottom:16px;box-shadow:var(--shadow);overflow:hidden}
+  .via svg{display:block;width:100%;height:auto}
+  .vlabel{font-family:"Space Mono",monospace;font-size:9.5px;fill:var(--muted);text-anchor:middle}
+  .vlabel.b{fill:var(--ink);font-weight:700;font-size:10.5px}
+  .conduit{fill:none;stroke-width:5;stroke-linecap:round;stroke-dasharray:2 12;animation:flow 1s linear infinite}
+  .conduit.symp{stroke:var(--symp);filter:drop-shadow(0 0 4px var(--symp-glow))}
+  .conduit.para{stroke:var(--para);filter:drop-shadow(0 0 4px var(--para-glow))}
+  .conduit.dead{stroke:var(--grey);animation:none;opacity:.5;filter:none}
+  @keyframes flow{to{stroke-dashoffset:-28}}
+
+  /* ---------- main split ---------- */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+  @media (max-width:860px){.split{grid-template-columns:1fr}}
+  .scope{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+  .scope.micro{background:linear-gradient(180deg,#11171f,#0c1118)}
+  .scope-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:13px 16px;border-bottom:1px solid var(--line)}
+  .scope-head .tt{font-family:"Sora",sans-serif;font-weight:700;font-size:1rem;display:flex;align-items:center;gap:9px}
+  .scope-head .id{font-family:"Space Mono",monospace;font-size:.66rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted)}
+  .stage{position:relative;flex:1;min-height:236px;display:grid;place-items:center;padding:14px}
+  .scope.micro .stage{background-image:linear-gradient(rgba(120,170,190,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(120,170,190,.05) 1px,transparent 1px);background-size:24px 24px}
+  .stage svg{width:100%;height:auto;max-height:300px}
+  .statebar{padding:11px 16px;border-top:1px solid var(--line);font-family:"Space Mono",monospace;
+    font-size:.8rem;display:flex;align-items:center;gap:9px;color:var(--ink)}
+  .statebar .dotled{width:10px;height:10px;border-radius:50%;flex:none}
+  .statebar.ok .dotled{background:var(--alive);box-shadow:0 0 8px var(--alive)}
+  .statebar.bad .dotled{background:var(--dead);box-shadow:0 0 8px var(--dead)}
+  .statebar.ok{color:var(--alive)} .statebar.bad{color:var(--symp-glow)}
+
+  /* microscope cascade text */
+  .micro-lbl{font-family:"Space Mono",monospace;font-size:8.5px;fill:#9fb4bd;text-anchor:middle}
+  .micro-lbl.b{fill:#e8edf3;font-weight:700;font-size:9.5px}
+  .micro-lbl.r{fill:var(--symp-glow);font-weight:700}
+
+  /* macro animations */
+  @keyframes beat{0%,100%{transform:scale(1)}24%{transform:scale(1.14)}}
+  @keyframes constrict{0%,100%{transform:scale(1)}50%{transform:scale(.55)}}
+  @keyframes wave{0%{transform:translateX(0);opacity:0}12%{opacity:1}88%{opacity:1}100%{transform:translateX(86px);opacity:0}}
+  @keyframes drip{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(22px);opacity:0}}
+  @keyframes fillp{0%,100%{transform:scaleX(.7)}50%{transform:scaleX(1.02)}}
+  @keyframes ntc{0%{transform:translateY(0);opacity:0}16%{opacity:1}100%{transform:translateY(46px);opacity:0}}
+  @keyframes pump{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+  .a-beat{animation:beat 1s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  .a-pupil{animation:constrict 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  .a-wave{animation:wave 2s linear infinite}
+  .a-drip{animation:drip 1.6s linear infinite}.a-drip.d2{animation-delay:.5s}.a-drip.d3{animation-delay:1s}
+  .a-fill{animation:fillp 3s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  .a-nt{animation:ntc 1.5s linear infinite}.a-nt.n2{animation-delay:.4s}.a-nt.n3{animation-delay:.8s}
+  .a-pump{animation:pump 1.7s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  @media (prefers-reduced-motion:reduce){
+    .conduit,.a-beat,.a-pupil,.a-wave,.a-drip,.a-fill,.a-nt,.a-pump{animation:none}
+  }
+
+  /* ---------- explanation strip ---------- */
+  .explain{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+  @media (max-width:780px){.explain{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 17px;box-shadow:var(--shadow)}
+  .card .tag{font-family:"Space Mono",monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;
+    font-weight:700;display:flex;align-items:center;gap:7px;margin-bottom:7px}
+  .card.mech .tag{color:var(--para)} .card.prob .tag{color:var(--dead)} .card.sol .tag{color:var(--gold)}
+  .card p{margin:0;font-size:.92rem;color:#cfd7e0}
+  .card p b{color:var(--ink)}
+  .receptors{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+  .rchip{font-family:"Space Mono",monospace;font-size:.72rem;border:1px solid var(--line);border-radius:8px;
+    padding:5px 9px;background:var(--panel2);color:var(--muted)}
+  .rchip b{color:var(--ink)}
+  .cite{margin-top:16px;font-family:"Space Mono",monospace;font-size:.72rem;color:var(--faint);
+    border-top:1px dashed var(--line);padding-top:11px}
+  .cite b{color:var(--muted)}
+
+  /* ---------- penis deep dive ---------- */
+  .pene{margin-top:30px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:clamp(18px,3vw,28px);box-shadow:var(--shadow)}
+  .pene h2,.game h2,.section-h{font-family:"Sora",sans-serif;font-weight:700;font-size:clamp(1.3rem,3vw,1.7rem);
+    margin:.1em 0 .25em;letter-spacing:-.01em}
+  .pene .sub,.game .sub{color:var(--muted);max-width:64ch;margin:0 0 18px}
+  .pene-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:20px;align-items:center}
+  @media (max-width:780px){.pene-grid{grid-template-columns:1fr}}
+  .pene-svg{background:linear-gradient(180deg,#11171f,#0c1118);border:1px solid var(--line);
+    border-radius:14px;padding:14px}
+  .pene-svg svg{display:block;width:100%;height:auto}
+  .steps{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .step{flex:1;min-width:130px;text-align:left;border:1px solid var(--line);background:var(--panel2);
+    border-radius:11px;padding:10px 12px;cursor:pointer;transition:.16s;color:var(--ink);font-family:inherit}
+  .step:hover{border-color:#3b4756}
+  .step[aria-current="true"]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+  .step .n{font-family:"Space Mono",monospace;font-size:.68rem;color:var(--muted)}
+  .step .t{font-family:"Sora",sans-serif;font-weight:600;font-size:.9rem;display:block;margin-top:2px}
+  .pene-text{font-size:.95rem;color:#cfd7e0;margin:0}
+  .pene-text b{color:var(--ink)} .pene-text em{color:var(--gold);font-style:normal;font-weight:600}
+  .contrast{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .contrast .cx{flex:1;min-width:200px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--panel2)}
+  .contrast .cx .h{font-family:"Space Mono",monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+  .contrast .cx.vaso .h{color:var(--symp)} .contrast .cx.pene .h{color:var(--para)}
+  .contrast .cx p{margin:0;font-size:.86rem;color:#cfd7e0}
+
+  /* sección Shy-Drager del pene */
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:4px 0 18px}
+  @media(max-width:640px){.cmp{grid-template-columns:1fr}}
+  .cmp-col{border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    background:linear-gradient(180deg,#11171f,#0c1118)}
+  .cmp-col.ok{border-color:rgba(95,211,138,.35)} .cmp-col.bad{border-color:rgba(226,87,77,.4)}
+  .cmp-col .ch{padding:10px 14px;font-family:"Sora",sans-serif;font-weight:700;font-size:.92rem;
+    border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+  .cmp-col.ok .ch{color:var(--alive)} .cmp-col.bad .ch{color:var(--dead)}
+  .cmp-col .cs{padding:12px 12px 0}
+  .cmp-col .cs svg{display:block;width:100%;height:auto}
+  .cmp-col .cc{padding:8px 14px 13px;font-size:.82rem;color:#cfd7e0}
+  .cmp-col .cc b{color:var(--ink)}
+  .failchain{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px 18px;margin:0 0 18px}
+  .failchain .ct{font-family:"Space Mono",monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:12px}
+  .fc-list{list-style:none;margin:0;padding:0}
+  .fc-list li{display:flex;gap:13px;align-items:flex-start;padding:7px 0;position:relative}
+  .fc-list li:not(:last-child)::after{content:"";position:absolute;left:14px;top:36px;bottom:-2px;width:2px;background:var(--line)}
+  .fc-n{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+    font-family:"Space Mono",monospace;font-weight:700;font-size:.84rem;color:#0d1014;background:var(--para);z-index:1}
+  .fc-list li.symp .fc-n{background:var(--symp)}
+  .fc-list li.dead .fc-n{background:var(--grey);color:#0d1014}
+  .fc-list li.brk .fc-n{background:var(--dead);color:#fff}
+  .fc-list li div{padding-top:5px;font-size:.92rem;color:#cfd7e0}
+  .fc-list li.dead div{color:var(--muted)}
+  .fc-list li.brk div{color:var(--symp-glow)}
+  .fc-list li div b{color:var(--ink)} .fc-list li.brk div b{color:#ffd0c8}
+
+  /* ciclo continuo */
+  .cycle{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .cyc{font-family:"Space Mono",monospace;border:1px solid var(--line);background:var(--panel2);
+    color:var(--muted);padding:8px 12px;border-radius:11px;cursor:pointer;transition:.15s;text-align:left;
+    border-left-width:3px}
+  .cyc:hover{border-color:#3b4756}
+  .cyc.para{border-left-color:var(--para)} .cyc.symp{border-left-color:var(--symp)}
+  .cyc .nm{display:block;font-family:"Sora",sans-serif;font-weight:600;font-size:.82rem;color:var(--ink)}
+  .cyc .sb{font-size:.64rem;letter-spacing:.04em}
+  .cyc[aria-current="true"]{box-shadow:inset 0 0 0 1px var(--gold);border-color:var(--gold)}
+  .cyc[aria-current="true"] .sb{color:var(--gold)}
+  .cyc-arrow{color:var(--faint);font-family:"Space Mono",monospace;font-size:1rem;flex:none;padding:0 1px}
+  .cyc-arrow.loop{color:var(--gold)}
+  .cycctrl{display:flex;gap:10px;align-items:center;margin:0 0 16px;flex-wrap:wrap}
+  .pene-text{font-size:.95rem;color:#cfd7e0;margin:16px 0 0}
+  .pene-text .nx{display:inline-block;margin-top:6px;font-family:"Space Mono",monospace;font-size:.82rem;color:var(--gold)}
+  .shy-banner{margin:14px 0 0;border:1px solid rgba(226,87,77,.4);background:rgba(226,87,77,.08);
+    border-radius:12px;padding:11px 14px;font-size:.88rem;color:var(--symp-glow)}
+  .shy-banner b{color:#ffd0c8}
+
+  /* ---------- game ---------- */
+  .game{margin-top:30px;background:linear-gradient(180deg,var(--panel),#11161d);
+    border:1px solid var(--line);border-radius:var(--radius);padding:clamp(18px,3vw,28px);box-shadow:var(--shadow)}
+  .game .scoreboard{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .score{font-family:"Space Mono",monospace;border:1px solid var(--line);border-radius:10px;
+    padding:8px 13px;background:var(--panel2)}
+  .score .k{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .score .v{font-size:1.2rem;font-weight:700;color:var(--ink)}
+  .qcard{border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--panel)}
+  .qmeta{font-family:"Space Mono",monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:8px}
+  .qtext{font-family:"Sora",sans-serif;font-weight:600;font-size:1.08rem;margin:0 0 14px}
+  .opts{display:grid;gap:9px}
+  .opt{text-align:left;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+    border-radius:11px;padding:12px 15px;cursor:pointer;font-size:.95rem;font-family:inherit;transition:.14s}
+  .opt:hover:not(:disabled){border-color:#3b4756}
+  .opt:disabled{cursor:default}
+  .opt.correct{border-color:var(--alive);background:rgba(95,211,138,.14)}
+  .opt.wrong{border-color:var(--dead);background:rgba(226,87,77,.12)}
+  .qfb{margin-top:13px;font-size:.9rem;color:#cfd7e0;min-height:1.2em}
+  .qfb b{color:var(--ink)}
+  .gbtn{margin-top:15px;font-family:"Sora",sans-serif;font-weight:600;font-size:.94rem;
+    background:var(--gold);color:#1a1405;border:none;border-radius:11px;padding:11px 20px;cursor:pointer;transition:.15s}
+  .gbtn:hover{filter:brightness(1.07)}
+  .gbtn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+
+  footer{margin-top:30px;color:var(--faint);font-size:.76rem;text-align:center;line-height:1.7}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Consola autonómica · Atrofia multisistémica</p>
+    <h1>Cuando la señal nunca <span class="br">sale</span> del SNC</h1>
+    <p class="lead">El <b>síndrome de Shy-Drager</b> (variante de la atrofia multisistémica) degenera las <b>neuronas preganglionares</b> de la médula. Como las fibras preganglionares del simpático <em>y</em> del parasimpático nacen del SNC, la lesión apaga <b>las dos divisiones a la vez</b>. Explora cada sistema: a la <b>izquierda</b> verás cómo responde el órgano; a la <b>derecha</b>, dónde actúa la acetilcolina, la noradrenalina o el NO sobre el músculo liso. Luego activa <b>Shy-Drager</b> y observa qué se apaga.</p>
+
+    <div class="topbar">
+      <label class="master">
+        <span class="switch">
+          <input type="checkbox" id="masterToggle" aria-label="Activar lesión de Shy-Drager">
+          <span class="track"></span>
+        </span>
+        <span class="lbl" id="masterLbl">Sistema sano<small>activa la lesión preganglionar</small></span>
+      </label>
+      <div class="legend" aria-hidden="true">
+        <span><i class="key p"></i>Parasimpático</span>
+        <span><i class="key s"></i>Simpático</span>
+        <span><i class="key d"></i>Señal perdida</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- system tabs -->
+  <div class="systabs" role="tablist" id="systabs" aria-label="Sistemas del cuerpo"></div>
+  <div class="pills" role="tablist" id="pills" aria-label="Órganos del sistema"></div>
+
+  <!-- via strip -->
+  <div class="via">
+    <svg id="viaSvg" viewBox="0 0 700 96" role="img" aria-label="Trayecto de la vía autónoma: médula, ganglio y órgano"></svg>
+  </div>
+
+  <!-- main split -->
+  <div class="split">
+    <section class="scope" aria-label="Respuesta del órgano">
+      <div class="scope-head">
+        <span class="tt" id="macroTitle">Órgano</span>
+        <span class="id">Macro · órgano efector</span>
+      </div>
+      <div class="stage" id="macroStage"></div>
+      <div class="statebar ok" id="macroState"><span class="dotled"></span><span id="macroStateTxt">—</span></div>
+    </section>
+
+    <section class="scope micro" aria-label="Unión neuroefectora">
+      <div class="scope-head">
+        <span class="tt" id="microTitle">Sinapsis</span>
+        <span class="id">Micro · unión neuroefectora</span>
+      </div>
+      <div class="stage" id="microStage"></div>
+      <div class="statebar ok" id="microState"><span class="dotled"></span><span id="microStateTxt">—</span></div>
+    </section>
+  </div>
+
+  <!-- explanation -->
+  <div class="explain">
+    <div class="card mech"><div class="tag">⚙️ Mecanismo normal</div><p id="cMech">—</p>
+      <div class="receptors" id="cRec"></div></div>
+    <div class="card prob"><div class="tag">⚠️ Qué falla en Shy-Drager</div><p id="cProb">—</p></div>
+    <div class="card sol"><div class="tag">💊 Abordaje / compensación</div><p id="cSol">—</p></div>
+  </div>
+  <p class="cite" id="cCite">—</p>
+
+  <!-- ===================== PENE DEEP DIVE ===================== -->
+  <section class="pene" id="peneSection">
+    <p class="eyebrow">Caso del Sr. García · primer síntoma</p>
+    <h2>El pene en detalle: la erección es <span style="color:var(--para)">relajación</span>, no contracción</h2>
+    <p class="sub">Recorre el ciclo completo: cada fase <b>continúa en la siguiente</b> (reposo → erección → meseta → emisión y eyaculación → detumescencia → reposo). A la izquierda, el órgano y sus efectos; a la derecha, el proceso microscópico que los explica. La impotencia fue el primer síntoma del Sr. García porque en Shy-Drager la señal de inicio nunca sale del SNC.</p>
+
+    <div class="cycle" id="peneCycle" role="tablist" aria-label="Ciclo de la respuesta sexual"></div>
+    <div class="cycctrl">
+      <button class="gbtn" id="penePlay">▶ Reproducir ciclo</button>
+      <button class="gbtn ghost" id="peneNext">Siguiente fase →</button>
+    </div>
+
+    <div class="split">
+      <section class="scope" aria-label="Órgano y efectos">
+        <div class="scope-head">
+          <span class="tt" id="peneMacroTitle">🍆 Órgano y efectos</span>
+          <span class="id">Macro · cuerpos cavernosos</span>
+        </div>
+        <div class="stage" id="peneMacroStage"></div>
+        <div class="statebar ok" id="peneMacroState"><span class="dotled"></span><span id="peneMacroTxt">—</span></div>
+      </section>
+
+      <section class="scope micro" aria-label="Procesos microscópicos">
+        <div class="scope-head">
+          <span class="tt" id="peneMicroTitle">Procesos microscópicos</span>
+          <span class="id">Micro · músculo liso cavernoso</span>
+        </div>
+        <div class="stage" id="peneMicroStage"></div>
+        <div class="statebar ok" id="peneMicroState"><span class="dotled"></span><span id="peneMicroTxt">—</span></div>
+      </section>
+    </div>
+
+    <p class="pene-text" id="peneText">—</p>
+    <div class="shy-banner" id="peneShy" hidden></div>
+
+    <div class="contrast">
+      <div class="cx vaso">
+        <div class="h">Vaso sanguíneo · α₁</div>
+        <p>La noradrenalina activa <b>α₁ (Gq → Ca²⁺)</b> y <b>contrae</b> el músculo liso → vasoconstricción. Mantiene la presión al pararse.</p>
+      </div>
+      <div class="cx pene">
+        <div class="h">Cuerpo cavernoso · NO</div>
+        <p>El NO activa la <b>guanilato ciclasa (↑GMPc)</b> y <b>relaja</b> el mismo tipo de músculo liso → entra sangre → erección. Mensajero opuesto, efecto opuesto.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SHY-DRAGER Y EL PENE ===================== -->
+  <section class="pene" id="peneShySection">
+    <p class="eyebrow">Shy-Drager · órgano diana más temprano</p>
+    <h2>Cómo afecta Shy-Drager al pene</h2>
+    <p class="sub">La erección es la respuesta autónoma más frágil del cuerpo: depende de una única señal parasimpática sacra que debe liberar óxido nítrico en el momento preciso. Por eso la disfunción eréctil suele ser el <b>primer</b> signo de Shy-Drager, a veces años antes de los síntomas motores. El interruptor de arriba refleja este mismo daño en toda la consola.</p>
+
+    <div class="cmp">
+      <div class="cmp-col ok">
+        <div class="ch">✓ Sano · la señal llega</div>
+        <div class="cs"><svg id="peneCmpOk" viewBox="0 0 220 150" role="img" aria-label="Cuerpos cavernosos llenos en estado sano"></svg></div>
+        <p class="cc">El parasimpático libera <b>NO</b> → ↑GMPc → el músculo liso se <b>relaja</b> → los sinusoides se llenan de sangre → erección.</p>
+      </div>
+      <div class="cmp-col bad">
+        <div class="ch">✕ Shy-Drager · la señal no sale del SNC</div>
+        <div class="cs"><svg id="peneCmpBad" viewBox="0 0 220 150" role="img" aria-label="Cuerpos cavernosos vacíos en Shy-Drager"></svg></div>
+        <p class="cc">Sin estímulo preganglionar no hay <b>NO</b>; el músculo liso queda <b>contraído</b> por el tono α₁ → los sinusoides permanecen vacíos → sin erección.</p>
+      </div>
+    </div>
+
+    <div class="failchain">
+      <div class="ct">Cadena de fallo · dónde se corta la señal</div>
+      <ol class="fc-list">
+        <li class="para"><span class="fc-n">1</span><div><b>Estímulo erótico</b> en el SNC (hipotálamo, médula sacra S2–S4): la vía intenta arrancar.</div></li>
+        <li class="brk"><span class="fc-n">✕</span><div><b>Neurona preganglionar sacra degenerada</b> — aquí se corta la señal en Shy-Drager. Es el punto de la lesión.</div></li>
+        <li class="dead"><span class="fc-n">3</span><div>No llega tráfico al <b>ganglio pélvico</b>: la neurona postganglionar nunca se activa.</div></li>
+        <li class="dead"><span class="fc-n">4</span><div>No se libera <b>óxido nítrico (NO)</b> sobre el músculo liso de los cuerpos cavernosos.</div></li>
+        <li class="dead"><span class="fc-n">5</span><div>La <b>guanilato ciclasa</b> no se estimula → el <b>GMPc</b> permanece bajo.</div></li>
+        <li class="dead"><span class="fc-n">6</span><div>El <b>músculo liso sigue contraído</b> (tono simpático α₁ sin oposición).</div></li>
+        <li class="dead"><span class="fc-n">7</span><div>Las arterias no se dilatan → no entra sangre → <b>disfunción eréctil</b>.</div></li>
+      </ol>
+    </div>
+
+    <div class="explain">
+      <div class="card prob"><div class="tag">⚠️ Por qué falla aquí primero</div>
+        <p>La lesión preganglionar apaga simpático y parasimpático a la vez, pero la <b>erección</b> es especialmente vulnerable: necesita una señal parasimpática finamente cronometrada que libere NO. Basta con perder ese inicio para que no haya vasodilatación, así que el pene «avisa» antes que otros órganos.</p></div>
+      <div class="card mech"><div class="tag">📉 Progresión clínica</div>
+        <p>Suele empezar por <b>disfunción eréctil</b> (vía parasimpática/NO); más adelante se añaden problemas de <b>emisión y eyaculación</b> (vía simpática α₁) y la impotencia se hace completa. Con frecuencia precede a la hipotensión ortostática y a los signos motores.</p></div>
+      <div class="card sol"><div class="tag">💊 Qué se puede hacer</div>
+        <p>Los <b>inhibidores de PDE5</b> (sildenafilo) prolongan el GMPc, pero rinden poco si el NO ni siquiera se libera por la lesión preganglionar. Pueden plantearse dispositivos de vacío o inyecciones intracavernosas, dentro de un manejo integral. No es consejo médico: requiere evaluación profesional.</p></div>
+    </div>
+    <p class="cite" id="peneShyCite"><b>Fuente:</b> Caso del Sr. García y Seminario SNA: erección parasimpática (NO/GMPc), eyaculación simpática (α₁); lesión preganglionar en Shy-Drager.</p>
+  </section>
+  <section class="game" id="gameSection">
+    <p class="eyebrow">Recuperación activa · modo desafío</p>
+    <h2>Reconstruye la sinapsis</h2>
+    <p class="sub">Responde sobre el transmisor, el músculo liso y la lógica de la lesión. Cada acierto suma; la racha mide cuántas seguidas llevas.</p>
+    <div class="scoreboard">
+      <div class="score"><div class="k">Aciertos</div><div class="v" id="scHit">0</div></div>
+      <div class="score"><div class="k">Total</div><div class="v" id="scTot">0</div></div>
+      <div class="score"><div class="k">Racha</div><div class="v" id="scStreak">0</div></div>
+    </div>
+    <div class="qcard">
+      <div class="qmeta" id="qMeta">Pregunta</div>
+      <p class="qtext" id="qText">Cargando…</p>
+      <div class="opts" id="qOpts"></div>
+      <div class="qfb" id="qFb"></div>
+      <button class="gbtn" id="qNext" hidden>Siguiente pregunta →</button>
+    </div>
+  </section>
+
+  <footer>
+    Construido sobre el material del curso: Seminario SNA (diapositivas: receptores M₁–M₅, α/β; transmisión colinérgica y adrenérgica), Atlas de la vía autónoma y el caso del Sr. García.<br>
+    Herramienta educativa. No reemplaza la evaluación clínica ni constituye consejo médico.
+  </footer>
+</div>
+
+<script>
+"use strict";
+const NS="http://www.w3.org/2000/svg";
+
+/* ============== DATOS: sistemas → órganos ============== */
+const SYSTEMS=[
+  {id:"ocular", name:"Visual / Ocular", icon:"👁", organs:["pupila"]},
+  {id:"cardio", name:"Cardiovascular", icon:"❤️", organs:["vasos","corazon"]},
+  {id:"digest", name:"Digestivo", icon:"🍽️", organs:["intestino"]},
+  {id:"teg",    name:"Tegumentario", icon:"💧", organs:["sudor","pilo"]},
+  {id:"genito", name:"Genitourinario", icon:"🚻", organs:["vejiga","pene"]},
+];
+
+/* division: "para" | "symp"  (la que se destaca en la consola)
+   micro.ntBase: ACh | NA | NO  (para el banco de preguntas)
+   micro.action: "contrae" | "relaja" | "secreta" | "↑ ritmo"
+   muscle: "liso" | "cardiaco" | "glandula" */
+const ORGANS={
+  pupila:{
+    name:"Pupila e iris", emoji:"👁", division:"para",
+    macro:"Pupila reactiva: el parasimpático contrae el esfínter del iris (miosis) y el músculo ciliar (enfoca de cerca); el simpático contrae el músculo radial (midriasis).",
+    micro:{div:"para", nt:"ACh", ntBase:"ACh", rec:"M₃ muscarínico", g:"Gq", msg:"IP₃ / Ca²⁺",
+      muscle:"liso", action:"contrae", result:"esfínter del iris → miosis y acomodación"},
+    mech:"El parasimpático libera <b>ACh</b> sobre receptores <b>M₃ (Gq → Ca²⁺)</b> y <b>contrae</b> el esfínter del iris (<b>miosis</b>) y el músculo ciliar (acomodación). El simpático dilata vía músculo radial (<b>α₁</b>) → <b>midriasis</b>.",
+    prob:"Sin la señal preganglionar la pupila queda <b>fija</b> y no hay acomodación: enfoque inestable, visión borrosa y diplopía.",
+    sol:"No hay corrección autonómica: se manejan los síntomas y la seguridad visual; las gotas que actúan sobre el receptor tienen efecto limitado porque falta la señal de inicio.",
+    rec:[["M₃","para · miosis"],["α₁","simp · midriasis"]],
+    okState:"Pupila reactiva: miosis ⇄ midriasis", badState:"Pupila fija · sin acomodación",
+    cite:"Seminario SNA, tabla de receptores: esfínter del iris y músculo ciliar → M (para); músculo radial → α₁ (simp)."
+  },
+  vasos:{
+    name:"Vasos sanguíneos", emoji:"🩸", division:"symp",
+    macro:"El músculo liso de la pared vascular se contrae con el simpático para sostener la presión arterial.",
+    micro:{div:"symp", nt:"NA", ntBase:"NA", rec:"α₁ adrenérgico", g:"Gq", msg:"IP₃ / Ca²⁺",
+      muscle:"liso", action:"contrae", result:"músculo liso vascular → vasoconstricción"},
+    mech:"Al ponerse de pie, el <b>barorreflejo</b> activa el simpático: <b>NA</b> sobre <b>α₁ (Gq → Ca²⁺)</b> <b>contrae</b> el músculo liso → <b>vasoconstricción</b> que sostiene la perfusión cerebral.",
+    prob:"Sin vasoconstricción refleja la sangre se estanca en las piernas: <b>hipotensión ortostática</b>, mareo y síncope al incorporarse. Es el signo cardinal.",
+    sol:"Medidas no farmacológicas (sal y líquidos, medias de compresión, elevar la cabecera) y fármacos como <b>midodrina</b> (agonista α₁ que sustituye la vasoconstricción) o fludrocortisona.",
+    rec:[["α₁","vasoconstricción"],["β₂","relaja (otros lechos)"]],
+    okState:"Vasoconstricción → presión estable", badState:"Sin vasoconstricción → la presión cae",
+    cite:"Seminario SNA: músculo liso vascular → α₁ contracción (vasos, esfínteres)."
+  },
+  corazon:{
+    name:"Corazón", emoji:"❤️", division:"symp",
+    macro:"El simpático acelera y refuerza el latido; el vago (parasimpático) lo frena.",
+    micro:{div:"symp", nt:"NA", ntBase:"NA", rec:"β₁ adrenérgico", g:"Gs", msg:"↑ AMPc",
+      muscle:"cardiaco", action:"↑ ritmo", result:"miocardio → ↑ frecuencia y contractilidad"},
+    mech:"La <b>NA</b> sobre <b>β₁ (Gs → ↑AMPc)</b> aumenta frecuencia y contractilidad. El vago, vía <b>M₂</b>, los reduce. Juntos ajustan el gasto cardíaco latido a latido.",
+    prob:"Sin la taquicardia refleja simpática, el corazón no compensa la caída de presión al pararse: agrava la hipotensión ortostática.",
+    sol:"Se trata la causa hemodinámica (volumen, midodrina); el control de frecuencia depende del resto del sistema autónomo, también dañado.",
+    rec:[["β₁","↑ FC / contractilidad"],["M₂","vago · ↓ FC"]],
+    okState:"Latido ajustable a la demanda", badState:"Sin respuesta cronotrópica refleja",
+    cite:"Seminario SNA: corazón → β₁ aumento de contractilidad; M₂ disminución de la contractilidad cardíaca."
+  },
+  intestino:{
+    name:"Intestino (motilidad)", emoji:"🌀", division:"para",
+    macro:"El parasimpático impulsa la peristalsis; el simpático la frena.",
+    micro:{div:"para", nt:"ACh", ntBase:"ACh", rec:"M₃ muscarínico", g:"Gq", msg:"IP₃ / Ca²⁺",
+      muscle:"liso", action:"contrae", result:"músculo liso → ↑ peristalsis y secreción"},
+    mech:"El vago libera <b>ACh</b> sobre <b>M₃ (Gq → Ca²⁺)</b> y <b>contrae</b> el músculo liso: <b>↑ motilidad</b> y secreción, con relajación de esfínteres. El simpático relaja la pared (<b>β₂</b>) y contrae esfínteres (<b>α₁</b>).",
+    prob:"Al perderse ambas divisiones la motilidad se vuelve descoordinada: indigestión, distensión y diarrea/estreñimiento alternantes.",
+    sol:"Medidas dietéticas, hidratación y procinéticos según el patrón; la regulación fina no se recupera.",
+    rec:[["M₃","para · ↑ motilidad"],["β₂","simp · relaja pared"],["α₁","esfínteres"]],
+    okState:"Peristalsis ordenada", badState:"Tránsito errático",
+    cite:"Seminario SNA: M₃ relajación/contracción de músculo liso; tubo digestivo → ↑motilidad parasimpática."
+  },
+  sudor:{
+    name:"Glándulas sudoríparas", emoji:"💧", division:"symp",
+    macro:"Excepción clave: el simpático usa ACh (no NA) para activar el sudor.",
+    micro:{div:"symp", nt:"ACh*", ntBase:"ACh", rec:"M muscarínico", g:"Gq", msg:"IP₃ / Ca²⁺",
+      muscle:"glandula", action:"secreta", result:"glándula → secreción de sudor"},
+    mech:"Las glándulas sudoríparas son una <b>excepción</b>: el simpático libera <b>ACh</b> (no NA) sobre receptores <b>M (Gq)</b> → <b>secreción</b> de sudor que disipa el calor por evaporación.",
+    prob:"Sin esa señal hay <b>anhidrosis</b>: el cuerpo no se enfría → intolerancia al calor y riesgo de golpe de calor.",
+    sol:"Manejo ambiental: ambientes frescos, hidratación, evitar el ejercicio en calor. No hay reemplazo farmacológico de la sudoración.",
+    rec:[["M","simpático colinérgico → sudor"]],
+    okState:"Suda y disipa el calor", badState:"Anhidrosis → intolerancia al calor",
+    cite:"Seminario SNA: glándulas sudoríparas como simpático colinérgico (ACh sobre receptor M)."
+  },
+  pilo:{
+    name:"Músculo piloerector", emoji:"🪮", division:"symp",
+    macro:"Pequeño músculo liso adosado al folículo: el simpático lo contrae (piel de gallina).",
+    micro:{div:"symp", nt:"NA", ntBase:"NA", rec:"α₁ adrenérgico", g:"Gq", msg:"IP₃ / Ca²⁺",
+      muscle:"liso", action:"contrae", result:"músculo liso → piloerección"},
+    mech:"La <b>NA</b> sobre <b>α₁ (Gq → Ca²⁺)</b> <b>contrae</b> el músculo piloerector → el vello se levanta (piloerección).",
+    prob:"Pierde el reflejo de piloerección; clínicamente es menor frente a la anhidrosis y la hipotensión, pero forma parte de la disautonomía global.",
+    sol:"Sin tratamiento específico; se aborda dentro del manejo general de la disautonomía.",
+    rec:[["α₁","contracción → piloerección"]],
+    okState:"Piloerección activa", badState:"Sin reflejo de piloerección",
+    cite:"Seminario SNA: α₁ contracción de músculo liso (incluye músculo piloerector)."
+  },
+  vejiga:{
+    name:"Vejiga (detrusor)", emoji:"🚽", division:"para",
+    macro:"Llenado bajo control simpático; vaciado bajo control parasimpático.",
+    micro:{div:"para", nt:"ACh", ntBase:"ACh", rec:"M₃ muscarínico", g:"Gq", msg:"IP₃ / Ca²⁺",
+      muscle:"liso", action:"contrae", result:"detrusor → contracción y vaciado"},
+    mech:"<b>Vaciado:</b> el parasimpático sacro libera <b>ACh</b> sobre <b>M₃ (Gq → Ca²⁺)</b> y <b>contrae</b> el detrusor, relajando el esfínter. <b>Llenado:</b> el simpático relaja el detrusor (<b>β₂</b>) y contrae el esfínter interno (<b>α₁</b>).",
+    prob:"La descoordinación detrusor–esfínter genera una <b>vejiga neurogénica</b>: urgencia con dificultad para iniciar el chorro y retención.",
+    sol:"Cateterismo intermitente, registro miccional y fármacos según el patrón (anticolinérgicos o agonistas); requiere evaluación urológica.",
+    rec:[["M₃","detrusor · vaciado"],["α₁","esfínter interno"],["β₂","relaja pared · llenado"]],
+    okState:"Se contrae y vacía bien", badState:"Vejiga neurogénica · retención",
+    cite:"Seminario SNA: vejiga → M₃ contracción del detrusor; α₁ esfínter; β₂ relajación de pared."
+  },
+  pene:{
+    name:"Cuerpos cavernosos", emoji:"🍆", division:"para",
+    macro:"Erección = relajación del músculo liso cavernoso por NO; eyaculación = contracción simpática.",
+    micro:{div:"para", nt:"ACh→NO", ntBase:"NO", rec:"guanilato ciclasa (vía NO)", recShort:"GC", g:"—", msg:"↑ GMPc",
+      muscle:"liso", action:"relaja", result:"músculo liso cavernoso → vasodilatación → erección"},
+    mech:"<b>Erección:</b> el parasimpático sacro (S2–S4) desencadena liberación de <b>óxido nítrico (NO)</b> → <b>guanilato ciclasa → ↑GMPc</b> → <b>relaja</b> el músculo liso cavernoso → entra sangre → erección. <b>Eyaculación:</b> el simpático (T11–L2) contrae conducto deferente y próstata (<b>α₁</b>).",
+    prob:"La degeneración preganglionar impide que <b>se inicie la señal</b>: sin NO el músculo liso no se relaja y la erección es imposible. Suele ser el <b>primer</b> síntoma.",
+    sol:"Inhibidores de <b>PDE5</b> (p. ej. sildenafilo) prolongan el poco GMPc disponible, pero su eficacia es limitada si la señal de NO ni siquiera se libera. Se complementa con manejo integral.",
+    rec:[["NO/GMPc","para · erección (relaja)"],["α₁","simp · eyaculación (contrae)"]],
+    okState:"Vasodilatación → erección", badState:"Sin NO → disfunción eréctil",
+    cite:"Seminario SNA y caso Sr. García: erección parasimpática (M/NO), eyaculación simpática (α)."
+  }
+};
+
+/* ============== ESTADO ============== */
+let shy=false;          // lesión activa
+let curSys="ocular";
+let curOrg="pupila";
+
+/* ============== TABS DE SISTEMAS ============== */
+const systabs=document.getElementById("systabs");
+SYSTEMS.forEach(s=>{
+  const b=document.createElement("button");
+  b.className="systab"; b.setAttribute("role","tab"); b.dataset.sys=s.id;
+  b.innerHTML=`<span class="ic">${s.icon}</span>${s.name}`;
+  b.setAttribute("aria-selected", s.id===curSys?"true":"false");
+  b.addEventListener("click",()=>{curSys=s.id; curOrg=s.organs[0]; refreshTabs(); render();});
+  systabs.appendChild(b);
+});
+const pillsEl=document.getElementById("pills");
+function refreshTabs(){
+  [...systabs.children].forEach(b=>b.setAttribute("aria-selected", b.dataset.sys===curSys?"true":"false"));
+  const sys=SYSTEMS.find(s=>s.id===curSys);
+  pillsEl.innerHTML="";
+  sys.organs.forEach(oid=>{
+    const o=ORGANS[oid];
+    const b=document.createElement("button");
+    b.className="pill"; b.setAttribute("role","tab"); b.dataset.org=oid;
+    b.textContent=o.emoji+" "+o.name;
+    b.setAttribute("aria-selected", oid===curOrg?"true":"false");
+    b.addEventListener("click",()=>{curOrg=oid; refreshTabs(); render();});
+    pillsEl.appendChild(b);
+  });
+}
+
+/* ============== VÍA (signature) ============== */
+function renderVia(){
+  const o=ORGANS[curOrg];
+  const div=o.micro.div;
+  const cls=shy?"dead":div; // color
+  const alive=!shy;
+  const cordX=70, gangX=350, organX=620, y=52;
+  let s="";
+  // médula
+  s+=`<rect x="30" y="20" width="80" height="60" rx="11" fill="#1c252e" stroke="#3a4654" stroke-width="1.4"/>`;
+  s+=`<text class="vlabel b" x="70" y="46">SNC</text>`;
+  s+=`<text class="vlabel" x="70" y="62">médula</text>`;
+  // ganglio
+  s+=`<circle cx="${gangX}" cy="${y}" r="17" fill="#2a2114" stroke="${shy?'var(--grey)':'var(--gold)'}" stroke-width="2.4"/>`;
+  s+=`<text class="vlabel" x="${gangX}" y="${y+34}">ganglio</text>`;
+  // órgano
+  s+=`<circle cx="${organX}" cy="${y}" r="20" fill="#1c252e" stroke="${shy?'var(--grey)':'#5a6776'}" stroke-width="1.6"/>`;
+  s+=`<text x="${organX}" y="${y+5}" text-anchor="middle" font-size="18">${o.emoji}</text>`;
+  s+=`<text class="vlabel" x="${organX}" y="${y+38}">${o.name}</text>`;
+  // fibra pre (médula→ganglio) — aquí está la lesión
+  s+=`<path class="conduit ${shy?'dead':div}" d="M110 ${y} H ${gangX-17}"/>`;
+  s+=`<text class="vlabel" x="${(110+gangX)/2}" y="${y-22}">preganglionar (ACh ▸ N)</text>`;
+  // fibra post (ganglio→órgano)
+  s+=`<path class="conduit ${shy?'dead':div}" d="M${gangX+17} ${y} H ${organX-20}"/>`;
+  const ntlab = div==="para" ? "postganglionar (ACh ▸ M)" : "postganglionar (NA ▸ α/β)";
+  s+=`<text class="vlabel" x="${(gangX+organX)/2}" y="${y-22}">${shy?'sin tráfico':ntlab}</text>`;
+  // ruptura
+  if(shy){
+    const bx=(110+gangX)/2;
+    s+=`<g><line x1="${bx-9}" y1="${y-9}" x2="${bx+9}" y2="${y+9}" stroke="var(--dead)" stroke-width="3.4"/>
+        <line x1="${bx-9}" y1="${y+9}" x2="${bx+9}" y2="${y-9}" stroke="var(--dead)" stroke-width="3.4"/></g>`;
+    s+=`<text class="vlabel b" x="${bx}" y="${y+34}" fill="var(--dead)">✕ lesión</text>`;
+  }
+  document.getElementById("viaSvg").innerHTML=s;
+}
+
+/* ============== MACRO (órgano) ============== */
+function macroSVG(id, alive){
+  switch(id){
+    case "pupila": return `<svg viewBox="0 0 200 130" aria-hidden="true">
+      <ellipse cx="100" cy="65" rx="78" ry="40" fill="#0f1922" stroke="#33424c" stroke-width="2"/>
+      <ellipse cx="100" cy="65" rx="74" ry="36" fill="#eaf4f8"/>
+      <circle cx="100" cy="65" r="30" fill="#3f7aa6"/>
+      <circle class="${alive?'a-pupil':''}" cx="100" cy="65" r="${alive?18:26}" fill="#0c1620"/>
+      <circle cx="91" cy="56" r="5" fill="#fff" opacity=".8"/></svg>`;
+    case "vasos": return `<svg viewBox="0 0 200 130" aria-hidden="true">
+      <rect x="14" y="${alive?40:30}" width="172" height="${alive?50:70}" rx="${alive?25:35}" fill="#2a1a1c" stroke="#7d3a3f" stroke-width="2.4"/>
+      <rect x="14" y="${alive?56:50}" width="172" height="${alive?18:30}" rx="${alive?9:15}" fill="#b03b3b"/>
+      ${alive
+        ? '<g fill="#e2574d"><circle class="a-wave" cx="22" cy="65" r="6"/><circle class="a-wave" style="animation-delay:.8s" cx="22" cy="65" r="6"/></g>'
+        : '<g fill="#7a3030"><circle cx="40" cy="65" r="7"/><circle cx="70" cy="68" r="8"/><circle cx="120" cy="62" r="7"/><circle cx="155" cy="66" r="8"/></g>'}
+      <text x="100" y="118" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" fill="${alive?'#5fd38a':'#e2574d'}">${alive?'lumen estrecho · ↑ resistencia':'lumen dilatado · sangre estancada'}</text></svg>`;
+    case "corazon": return `<svg viewBox="0 0 200 130" aria-hidden="true">
+      <g class="${alive?'a-beat':''}"><path d="M100 110 C 50 70 36 42 64 32 C 82 26 96 38 100 50 C 104 38 118 26 136 32 C 164 42 150 70 100 110 Z"
+        fill="${alive?'#e2574d':'#9a5b57'}" stroke="#7d2a26" stroke-width="2"/></g>
+      ${alive
+        ? '<path d="M168 44 v36 M168 44 l-7 9 M168 44 l7 9" stroke="#5fd38a" stroke-width="3" fill="none" stroke-linecap="round"/>'
+        : '<path d="M168 80 v-36 M168 80 l-7 -9 M168 80 l7 -9" stroke="#e2574d" stroke-width="3" fill="none" stroke-linecap="round"/>'}</svg>`;
+    case "intestino": return `<svg viewBox="0 0 200 130" aria-hidden="true">
+      <rect x="20" y="50" width="160" height="30" rx="15" fill="#3a2620" stroke="#7a4d3c" stroke-width="2"/>
+      <rect x="22" y="56" width="156" height="18" rx="9" fill="#c47a64"/>
+      ${alive
+        ? '<circle class="a-wave" cx="30" cy="65" r="8" fill="#8a4a36"/>'
+        : '<g fill="#8a4a36"><circle cx="55" cy="65" r="6"/><circle cx="110" cy="65" r="10"/><circle cx="150" cy="65" r="5"/></g>'}
+      <text x="100" y="106" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" fill="${alive?'#5fd38a':'#e2574d'}">${alive?'onda peristáltica ordenada':'tránsito errático'}</text></svg>`;
+    case "sudor": return `<svg viewBox="0 0 200 130" aria-hidden="true">
+      <rect x="56" y="18" width="88" height="56" rx="13" fill="#3a2a22" stroke="#7a5544" stroke-width="2"/>
+      <rect x="60" y="22" width="80" height="48" rx="10" fill="#d9a98f"/>
+      <circle cx="84" cy="40" r="2.4" fill="#7a5544"/><circle cx="116" cy="46" r="2.4" fill="#7a5544"/><circle cx="100" cy="56" r="2.4" fill="#7a5544"/>
+      ${alive
+        ? '<g fill="#7fd6ff"><ellipse class="a-drip" cx="84" cy="78" rx="4" ry="6"/><ellipse class="a-drip d2" cx="100" cy="78" rx="4" ry="6"/><ellipse class="a-drip d3" cx="116" cy="78" rx="4" ry="6"/></g>'
+        : '<g stroke="#e08a4d" stroke-width="2.4" fill="none" stroke-linecap="round"><path d="M84 82 q6 8 0 16"/><path d="M100 82 q6 8 0 16"/><path d="M116 82 q6 8 0 16"/></g>'}
+      <text x="100" y="120" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" fill="${alive?'#5fd38a':'#e2574d'}">${alive?'sudor → enfría':'anhidrosis → calor'}</text></svg>`;
+    case "pilo": return `<svg viewBox="0 0 200 130" aria-hidden="true">
+      <rect x="24" y="74" width="152" height="32" rx="8" fill="#3a2a22" stroke="#7a5544" stroke-width="2"/>
+      <rect x="26" y="80" width="148" height="20" rx="6" fill="#d9a98f"/>
+      ${[40,72,104,136,168].map(x=>alive
+        ? `<line x1="${x}" y1="74" x2="${x}" y2="34" stroke="#5a3a2a" stroke-width="3" stroke-linecap="round"/>`
+        : `<path d="M${x} 74 q14 -6 18 -14" stroke="#5a3a2a" stroke-width="3" fill="none" stroke-linecap="round"/>`).join("")}
+      <text x="100" y="122" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" fill="${alive?'#5fd38a':'#e2574d'}">${alive?'piloerección':'vello en reposo'}</text></svg>`;
+    case "vejiga": return `<svg viewBox="0 0 200 130" aria-hidden="true">
+      <path d="M100 ${alive?34:20} C ${alive?150:170} ${alive?34:20} ${alive?158:178} ${alive?78:90} ${alive?130:150} ${alive?96:112}
+        C 116 106 84 106 ${alive?70:50} ${alive?96:112} C ${alive?42:22} ${alive?78:90} ${alive?50:30} ${alive?34:20} 100 ${alive?34:20} Z"
+        fill="#3a3018" stroke="#b9933e" stroke-width="2"/>
+      <path d="M100 ${alive?40:26} C ${alive?142:162} ${alive?40:26} ${alive?148:168} ${alive?76:88} ${alive?124:144} ${alive?90:106}
+        C 114 98 86 98 ${alive?76:56} ${alive?90:106} C ${alive?52:32} ${alive?76:88} ${alive?58:38} ${alive?40:26} 100 ${alive?40:26} Z"
+        fill="#e0c168" opacity=".55"/>
+      ${alive?'<g fill="#e7c96a"><circle class="a-drip" cx="100" cy="104" r="3.4"/><circle class="a-drip d2" cx="100" cy="104" r="3.4"/></g>':''}
+      <text x="100" y="124" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" fill="${alive?'#5fd38a':'#e2574d'}">${alive?'detrusor contrae → vacía':'distendida · retención'}</text></svg>`;
+    case "pene": return `<svg viewBox="0 0 200 130" aria-hidden="true">
+      <g class="${alive?'a-fill':''}" transform="translate(100,60)">
+        <ellipse cx="0" cy="-12" rx="${alive?72:42}" ry="${alive?13:9}" fill="${alive?'#c95f6e':'#7a4654'}" stroke="#8a4757" stroke-width="1.6"/>
+        <ellipse cx="0" cy="8" rx="${alive?72:42}" ry="${alive?13:9}" fill="${alive?'#c95f6e':'#7a4654'}" stroke="#8a4757" stroke-width="1.6"/>
+        ${alive?'<g fill="#7fd6ff" opacity=".5"><circle cx="-30" cy="-12" r="4"/><circle cx="10" cy="-12" r="4"/><circle cx="-10" cy="8" r="4"/><circle cx="34" cy="8" r="4"/></g>':''}
+      </g>
+      <text x="100" y="118" text-anchor="middle" font-family="Space Mono,monospace" font-size="10" fill="${alive?'#5fd38a':'#e2574d'}">${alive?'cavernosos llenos · erección':'flácido · sin llenado'}</text></svg>`;
+  }
+  return "";
+}
+
+/* ============== MICRO (sinapsis neuroefectora) ============== */
+function microSVG(id, alive){ return synapseSVG(ORGANS[id].micro, alive); }
+function synapseSVG(m, alive){
+  const ntCol = m.ntBase==="NA" ? "var(--symp)" : (m.ntBase==="NO" ? "var(--no)" : "var(--para)");
+  const memTop=104, memBot=150;
+  let s=`<svg viewBox="0 0 320 280" aria-hidden="true">`;
+  // terminal postganglionar
+  s+=`<path d="M40 18 q120 -6 240 0 q6 40 -6 64 q-114 8 -228 0 q-12 -28 -6 -64 Z" fill="rgba(120,160,180,.07)" stroke="#3a4a55" stroke-width="1.4"/>`;
+  s+=`<text class="micro-lbl" x="160" y="16" >terminal ${m.div==="para"?"parasimpática":"simpática"}</text>`;
+  // vesículas
+  for(let i=0;i<3;i++){
+    const cx=110+i*50;
+    s+=`<circle cx="${cx}" cy="54" r="11" fill="rgba(255,255,255,.04)" stroke="${ntCol}" stroke-width="1.3"/>`;
+    s+=`<circle cx="${cx-3}" cy="52" r="2.6" fill="${ntCol}"/><circle cx="${cx+4}" cy="56" r="2.6" fill="${ntCol}"/>`;
+  }
+  // NT cruzando
+  if(alive){
+    [0,1,2].forEach((i)=>{
+      const cx=110+i*50;
+      s+=`<circle class="a-nt ${i?('n'+(i+1)):''}" cx="${cx}" cy="80" r="4.5" fill="${ntCol}"/>`;
+    });
+  }
+  // hendidura label
+  s+=`<text class="micro-lbl" x="40" y="96" text-anchor="start">hendidura</text>`;
+  // membrana del músculo / glándula
+  s+=`<rect x="20" y="${memTop}" width="280" height="${memBot-memTop}" fill="rgba(150,180,200,.04)"/>`;
+  for(let x=28;x<296;x+=12){
+    s+=`<circle cx="${x}" cy="${memTop+4}" r="3" fill="#cdb784" stroke="#9c8654" stroke-width=".4"/>
+        <line x1="${x}" y1="${memTop+7}" x2="${x}" y2="${memTop+11}" stroke="#9c8654" stroke-width=".8"/>
+        <circle cx="${x}" cy="${memTop+14}" r="3" fill="#cdb784" stroke="#9c8654" stroke-width=".4"/>`;
+  }
+  // receptor
+  const recX=160;
+  s+=`<rect x="${recX-15}" y="${memTop-4}" width="30" height="26" rx="6" fill="#23303a" stroke="${alive?ntCol:'var(--grey)'}" stroke-width="2"/>`;
+  s+=`<text class="micro-lbl b" x="${recX}" y="${memTop+11}" fill="${alive?'#e8edf3':'var(--grey)'}">${m.recShort||m.rec.split(' ')[0]}</text>`;
+  s+=`<text class="micro-lbl" x="${recX}" y="${memBot+14}">receptor: ${m.rec}</text>`;
+  // cascada intracelular
+  if(alive){
+    if(m.g!=="—"){
+      s+=`<ellipse cx="${recX}" cy="${memBot+38}" rx="20" ry="12" fill="#2e2440" stroke="#9b7fd0" stroke-width="1.3"/>`;
+      s+=`<text class="micro-lbl b" x="${recX}" y="${memBot+41}">${m.g}</text>`;
+      s+=`<path d="M${recX} ${memBot+50} L${recX} ${memBot+66}" stroke="#9b7fd0" stroke-width="1.6"/>`;
+    } else {
+      s+=`<path d="M${recX} ${memBot+24} L${recX} ${memBot+66}" stroke="#9b7fd0" stroke-width="1.6"/>`;
+    }
+    s+=`<rect x="${recX-32}" y="${memBot+66}" width="64" height="22" rx="11" fill="#1e3024" stroke="#6db36d" stroke-width="1.3"/>`;
+    s+=`<text class="micro-lbl b" x="${recX}" y="${memBot+80}" fill="#bfe9bf">${m.msg}</text>`;
+    // músculo / glándula
+    const my=memBot+128;
+    if(m.muscle==="glandula"){
+      s+=`<rect x="${recX-26}" y="${my-18}" width="52" height="32" rx="9" fill="#3a2a22" stroke="#7a5544" stroke-width="1.4"/>`;
+      s+=`<g fill="${ntCol}"><ellipse class="a-drip" cx="${recX-12}" cy="${my+18}" rx="3.4" ry="5"/><ellipse class="a-drip d2" cx="${recX+12}" cy="${my+18}" rx="3.4" ry="5"/></g>`;
+      s+=`<text class="micro-lbl b" x="${recX}" y="${my+34}" fill="#bfe9bf">secreta</text>`;
+    } else {
+      const contract = m.action==="contrae" || m.action==="↑ ritmo";
+      const rx = contract? 22 : 46, ry = contract? 16 : 9;
+      const col = contract? "#e08a4d" : "var(--para)";
+      s+=`<ellipse class="a-pump" cx="${recX}" cy="${my}" rx="${rx}" ry="${ry}" fill="rgba(255,255,255,.05)" stroke="${col}" stroke-width="2.4"/>`;
+      // núcleo
+      s+=`<ellipse cx="${recX}" cy="${my}" rx="${contract?6:9}" ry="5" fill="${col}" opacity=".55"/>`;
+      const verb = m.action==="↑ ritmo" ? "↑ contractilidad" : (contract? "se CONTRAE" : "se RELAJA");
+      s+=`<text class="micro-lbl b" x="${recX}" y="${my+34}" fill="${contract?'#f3c79a':'#9af0e3'}">músculo ${verb}</text>`;
+    }
+    // recaptación / AChE
+    if(m.ntBase==="NA"){
+      s+=`<rect x="250" y="62" width="34" height="13" rx="6" fill="#33424a" stroke="#7fa0ad"/><text class="micro-lbl" x="267" y="86">recaptación NA</text>`;
+    } else if(m.ntBase==="ACh"){
+      s+=`<rect x="250" y="62" width="30" height="13" rx="6" fill="#33424a" stroke="#7fa0ad"/><text class="micro-lbl" x="265" y="86">AChE</text>`;
+    }
+  } else {
+    // bloqueada: ruptura arriba (la señal no llegó)
+    s+=`<text class="micro-lbl r" x="160" y="40">⚡ no llega el potencial de acción</text>`;
+    s+=`<g><line x1="151" y1="${memTop-6}" x2="169" y2="${memTop+24}" stroke="var(--dead)" stroke-width="3"/>
+        <line x1="169" y1="${memTop-6}" x2="151" y2="${memTop+24}" stroke="var(--dead)" stroke-width="3"/></g>`;
+    const my=memBot+128;
+    if(m.muscle==="glandula"){
+      s+=`<rect x="${recX-26}" y="${my-18}" width="52" height="32" rx="9" fill="#2a2420" stroke="var(--grey)" stroke-width="1.4"/>`;
+      s+=`<text class="micro-lbl b" x="${recX}" y="${my+34}" fill="var(--grey)">sin secreción</text>`;
+    } else {
+      s+=`<ellipse cx="${recX}" cy="${my}" rx="34" ry="11" fill="rgba(120,130,140,.08)" stroke="var(--grey)" stroke-width="2.4"/>`;
+      s+=`<ellipse cx="${recX}" cy="${my}" rx="8" ry="5" fill="var(--grey)" opacity=".5"/>`;
+      s+=`<text class="micro-lbl b" x="${recX}" y="${my+34}" fill="var(--grey)">músculo en reposo · sin respuesta</text>`;
+    }
+  }
+  s+=`</svg>`;
+  return s;
+}
+
+/* ============== RENDER PRINCIPAL ============== */
+function render(){
+  const o=ORGANS[curOrg];
+  const alive=!shy;
+  // titulos
+  document.getElementById("macroTitle").innerHTML=o.emoji+" "+o.name;
+  document.getElementById("microTitle").innerHTML="Sinapsis · "+(o.micro.div==="para"?"ACh ▸ M":(o.micro.ntBase==="NO"?"NO ▸ GMPc":"NA ▸ "+o.micro.rec.split(' ')[0]));
+  // stages
+  document.getElementById("macroStage").innerHTML=macroSVG(curOrg, alive);
+  document.getElementById("microStage").innerHTML=microSVG(curOrg, alive);
+  // state bars
+  const ms=document.getElementById("macroState"), mst=document.getElementById("macroStateTxt");
+  ms.className="statebar "+(alive?"ok":"bad"); mst.textContent=alive?("✓ "+o.okState):("✕ "+o.badState);
+  const cs=document.getElementById("microState"), cst=document.getElementById("microStateTxt");
+  cs.className="statebar "+(alive?"ok":"bad");
+  cst.textContent = alive
+    ? ("✓ "+o.micro.nt+" → "+o.micro.rec.split(' ')[0]+" → "+o.micro.result)
+    : "✕ la señal no llega al efector";
+  // explanation
+  document.getElementById("cMech").innerHTML=o.mech;
+  document.getElementById("cProb").innerHTML=o.prob;
+  document.getElementById("cSol").innerHTML=o.sol;
+  document.getElementById("cRec").innerHTML=o.rec.map(r=>`<span class="rchip"><b>${r[0]}</b> · ${r[1]}</span>`).join("");
+  document.getElementById("cCite").innerHTML="<b>Fuente:</b> "+o.cite;
+  // via
+  renderVia();
+}
+
+/* master toggle */
+const master=document.getElementById("masterToggle"), masterLbl=document.getElementById("masterLbl");
+master.addEventListener("change",e=>{
+  shy=e.target.checked;
+  masterLbl.innerHTML = shy
+    ? 'Shy-Drager activo<small style="color:var(--dead)">lesión preganglionar · ambas divisiones caen</small>'
+    : 'Sistema sano<small>activa la lesión preganglionar</small>';
+  render(); renderPene();
+});
+
+/* ============== PENE: CICLO CONTINUO ============== */
+const PHASES=[
+  {id:"reposo", name:"Reposo", sub:"tono simpático", div:"symp", erect:false,
+    effect:"Pene flácido. El tono simpático mantiene <b>contraído</b> el músculo liso cavernoso, así que entra poca sangre.",
+    micro:{div:"symp", nt:"NA", ntBase:"NA", rec:"α₁ adrenérgico", g:"Gq", msg:"IP₃ / Ca²⁺", muscle:"liso", action:"contrae"},
+    macroTxt:"Flácido · músculo liso contraído",
+    next:"Un estímulo erótico activa el parasimpático sacro →"},
+  {id:"erec", name:"Erección", sub:"parasimp · NO", div:"para", erect:true,
+    effect:"El parasimpático <b>S2–S4</b> dispara la liberación de <b>óxido nítrico</b>: el músculo liso se <b>relaja</b>, las arterias se llenan, comprimen las venas y el pene se ingurgita.",
+    micro:{div:"para", nt:"NO", ntBase:"NO", rec:"guanilato ciclasa (vía NO)", recShort:"GC", g:"—", msg:"↑ GMPc", muscle:"liso", action:"relaja"},
+    macroTxt:"Erecto · entra sangre",
+    next:"El llenado se mantiene en meseta →"},
+  {id:"meseta", name:"Meseta", sub:"mantenimiento", div:"para", erect:true,
+    effect:"Erección sostenida: el flujo arterial alto y la oclusión venosa conservan la rigidez mientras dura el estímulo parasimpático.",
+    micro:{div:"para", nt:"NO", ntBase:"NO", rec:"guanilato ciclasa (vía NO)", recShort:"GC", g:"—", msg:"GMPc alto", muscle:"liso", action:"relaja"},
+    macroTxt:"Erección sostenida",
+    next:"El simpático toracolumbar desencadena la emisión →"},
+  {id:"eyac", name:"Emisión + eyaculación", sub:"simpático · α₁", div:"symp", erect:true, shoot:true,
+    effect:"El simpático <b>T11–L2</b> contrae el músculo liso del <b>conducto deferente, vesículas seminales y próstata</b> (emisión) y produce la eyaculación rítmica.",
+    micro:{div:"symp", nt:"NA", ntBase:"NA", rec:"α₁ adrenérgico", g:"Gq", msg:"IP₃ / Ca²⁺", muscle:"liso", action:"contrae"},
+    macroTxt:"Erecto · emisión y eyaculación",
+    next:"Tras la eyaculación vuelve el tono simpático →"},
+  {id:"detum", name:"Detumescencia", sub:"resolución", div:"symp", erect:false,
+    effect:"Vuelve el tono simpático: el músculo liso se <b>contrae</b>, sale la sangre de los cuerpos cavernosos y el pene regresa a flácido.",
+    micro:{div:"symp", nt:"NA", ntBase:"NA", rec:"α₁ adrenérgico", g:"Gq", msg:"IP₃ / Ca²⁺", muscle:"liso", action:"contrae"},
+    macroTxt:"Vaciado · vuelve a flácido",
+    next:"El ciclo regresa al reposo ↺"}
+];
+let curPhase=0, playTimer=null;
+
+/* timeline encadenado */
+function buildPeneCycle(){
+  const c=document.getElementById("peneCycle"); c.innerHTML="";
+  PHASES.forEach((p,i)=>{
+    const b=document.createElement("button");
+    b.className="cyc "+p.div; b.setAttribute("role","tab"); b.dataset.i=i;
+    b.innerHTML=`<span class="nm">${p.name}</span><span class="sb">${p.sub}</span>`;
+    b.addEventListener("click",()=>{stopPlay(); curPhase=i; renderPene();});
+    c.appendChild(b);
+    const arr=document.createElement("span");
+    arr.className="cyc-arrow"+(i===PHASES.length-1?" loop":"");
+    arr.textContent=i===PHASES.length-1?"↺":"→";
+    c.appendChild(arr);
+  });
+}
+
+/* pene macro */
+function peneMacroSVG(p, alive){
+  const erect = alive && p.erect;
+  const shoot = alive && p.shoot;
+  const cavR = erect?32:21, spgR = erect?20:15;
+  const cavFill = erect?'#c25a6e':'#6f4350';
+  const cxL=88, cxR=132, cx=110, cyT=62, cyS=106;
+  let s=`<svg viewBox="0 0 220 150" aria-hidden="true">`;
+  // piel + túnica albugínea (sección transversal del cuerpo del pene)
+  s+=`<ellipse cx="110" cy="74" rx="76" ry="56" fill="#241016" stroke="#5a2f37" stroke-width="2"/>`;
+  s+=`<ellipse cx="110" cy="74" rx="68" ry="49" fill="#3a1c24" stroke="#7a3a44" stroke-width="1.3"/>`;
+  // cuerpo esponjoso (abajo) con uretra
+  s+=`<circle cx="${cx}" cy="${cyS}" r="${spgR}" fill="${erect?'#a85667':'#6f4350'}" stroke="#8a4757" stroke-width="1.6"/>`;
+  s+=`<circle cx="${cx}" cy="${cyS}" r="5" fill="#160b0e" stroke="#caa" stroke-width="1"/>`;
+  // dos cuerpos cavernosos (arriba) con septo entre ellos
+  s+=`<circle cx="${cxL}" cy="${cyT}" r="${cavR}" fill="${cavFill}" stroke="#8a4757" stroke-width="1.8"/>`;
+  s+=`<circle cx="${cxR}" cy="${cyT}" r="${cavR}" fill="${cavFill}" stroke="#8a4757" stroke-width="1.8"/>`;
+  s+=`<line x1="110" y1="${cyT-cavR+5}" x2="110" y2="${cyT+cavR-5}" stroke="#7a3a44" stroke-width="2"/>`;
+  // arteria profunda de cada cavernoso
+  s+=`<circle cx="${cxL}" cy="${cyT}" r="2.6" fill="#e2574d"/><circle cx="${cxR}" cy="${cyT}" r="2.6" fill="#e2574d"/>`;
+  // sinusoides (sangre): llenos y pulsando si hay erección
+  const seed=[[-16,-10],[11,-14],[16,9],[-12,12],[1,-1],[-5,-18],[18,-3],[-18,3],[7,17]];
+  function dots(c){
+    let d=""; const n=erect?9:3, sc=cavR/32;
+    for(let i=0;i<n;i++){const o=seed[i];
+      d+=`<circle class="${erect?'cascade':''}" cx="${c+o[0]*sc}" cy="${cyT+o[1]*sc}" r="${erect?3:2.2}" fill="${erect?'#7fd6ff':'#4a3640'}" opacity="${erect?'.85':'.5'}"/>`;}
+    return d;
+  }
+  s+=dots(cxL)+dots(cxR);
+  // eyaculación: gotas saliendo por la uretra
+  if(shoot){
+    s+=`<g fill="#e8eef0"><circle class="a-drip" cx="${cx}" cy="${cyS+spgR+6}" r="3.4"/><circle class="a-drip d2" cx="${cx}" cy="${cyS+spgR+6}" r="3.4"/><circle class="a-drip d3" cx="${cx}" cy="${cyS+spgR+6}" r="3.4"/></g>`;
+  }
+  // etiquetas breves
+  s+=`<text x="186" y="${cyT+3}" text-anchor="start" font-family="Space Mono,monospace" font-size="8" fill="#9fb4bd">2 cavernosos</text>`;
+  s+=`<text x="186" y="${cyS+3}" text-anchor="start" font-family="Space Mono,monospace" font-size="8" fill="#9fb4bd">esponjoso</text>`;
+  // bloqueo Shy-Drager
+  if(!alive){
+    s+=`<g transform="translate(110,${cyT})"><line x1="-13" y1="-13" x2="13" y2="13" stroke="var(--dead)" stroke-width="3.4"/><line x1="13" y1="-13" x2="-13" y2="13" stroke="var(--dead)" stroke-width="3.4"/></g>`;
+  }
+  s+=`<text x="110" y="146" text-anchor="middle" font-family="Space Mono,monospace" font-size="10"
+        fill="${!alive?'#e2574d':(erect?'#9af0e3':'#f3c79a')}">${!alive?'sinusoides vacíos · señal no llega':(erect?'sinusoides llenos de sangre → erección':'sinusoides colapsados → flácido')}</text>`;
+  s+=`</svg>`;
+  return s;
+}
+
+function renderPene(){
+  buildPeneCycle();
+  const alive=!shy;
+  const p=PHASES[curPhase];
+  // timeline aria-current
+  document.querySelectorAll("#peneCycle .cyc").forEach(b=>b.setAttribute("aria-current", (+b.dataset.i===curPhase)?"true":"false"));
+  // titulos micro
+  const mc=p.micro;
+  document.getElementById("peneMicroTitle").innerHTML = "Micro · "+(mc.div==="para"?"NO ▸ GMPc":"NA ▸ α₁");
+  // paneles
+  document.getElementById("peneMacroStage").innerHTML=peneMacroSVG(p, alive);
+  document.getElementById("peneMicroStage").innerHTML=synapseSVG(mc, alive);
+  // statebars
+  const ma=document.getElementById("peneMacroState"), mat=document.getElementById("peneMacroTxt");
+  ma.className="statebar "+(alive?"ok":"bad");
+  mat.textContent = alive ? ("✓ "+p.macroTxt) : "✕ el ciclo no progresa";
+  const mi=document.getElementById("peneMicroState"), mit=document.getElementById("peneMicroTxt");
+  mi.className="statebar "+(alive?"ok":"bad");
+  mit.textContent = alive
+    ? ("✓ "+mc.nt+" → "+(mc.action==="relaja"?"músculo se RELAJA":"músculo se CONTRAE"))
+    : "✕ no llega el potencial de acción";
+  // texto + continuidad
+  document.getElementById("peneText").innerHTML =
+    `<b>${p.name} · ${p.sub}.</b> ${p.effect}<span class="nx">${p.next}</span>`;
+  // banner shy-drager
+  const banner=document.getElementById("peneShy");
+  if(shy){ banner.hidden=false;
+    banner.innerHTML="<b>Shy-Drager activo:</b> degeneran las neuronas preganglionares, así que la señal nunca sale del SNC. Sin estímulo parasimpático no se libera NO y el ciclo no puede arrancar — por eso la impotencia es el primer síntoma.";
+  } else banner.hidden=true;
+}
+
+function advancePhase(){ curPhase=(curPhase+1)%PHASES.length; renderPene(); }
+function stopPlay(){ if(playTimer){clearInterval(playTimer);playTimer=null;
+  document.getElementById("penePlay").textContent="▶ Reproducir ciclo";} }
+document.getElementById("penePlay").addEventListener("click",()=>{
+  if(playTimer){ stopPlay(); }
+  else { document.getElementById("penePlay").textContent="⏸ Pausar ciclo";
+    playTimer=setInterval(advancePhase,3200); }
+});
+document.getElementById("peneNext").addEventListener("click",()=>{ stopPlay(); advancePhase(); });
+
+/* ============== JUEGO ============== */
+let pool=[], hits=0, total=0, streak=0, answered=false;
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function buildPool(){
+  const qs=[];
+  // conceptuales fijas
+  qs.push({meta:"Localización de la lesión", q:"En el síndrome de Shy-Drager, ¿qué neuronas degeneran?",
+    opts:[{t:"Preganglionares del SNC",c:true},{t:"Postganglionares del órgano",c:false},{t:"Solo los receptores del efector",c:false}],
+    fb:"Correcto. La lesión es preganglionar; como las fibras pre del simpático y del parasimpático nacen del SNC, caen ambas divisiones."});
+  qs.push({meta:"Lógica del síndrome", q:"¿Por qué fallan a la vez el simpático y el parasimpático?",
+    opts:[{t:"Porque la lesión preganglionar es común a ambas divisiones",c:true},{t:"Porque comparten el mismo órgano efector",c:false},{t:"Porque usan el mismo receptor en el órgano",c:false}],
+    fb:"Correcto. Toda fibra preganglionar (de ambas divisiones) sale del SNC y usa ACh nicotínica en el ganglio; al degenerar el origen, se apaga todo el tráfico."});
+  qs.push({meta:"Caso Sr. García", q:"¿Cuál fue el primer síntoma del Sr. García?",
+    opts:[{t:"Impotencia (disfunción eréctil)",c:true},{t:"Sudoración excesiva",c:false},{t:"Hipertensión al acostarse",c:false}],
+    fb:"Correcto. La erección depende de una señal parasimpática delicada (NO), por eso suele fallar primero."});
+  qs.push({meta:"Hemodinámica", q:"La hipotensión ortostática en Shy-Drager se debe a la falta de…",
+    opts:[{t:"Vasoconstricción simpática (α₁)",c:true},{t:"Relajación parasimpática de los vasos",c:false},{t:"Secreción de sudor",c:false}],
+    fb:"Correcto. Sin α₁ no hay vasoconstricción refleja al pararse: la sangre se estanca y cae la presión."});
+  qs.push({meta:"Músculo liso", q:"Para lograr una erección, el músculo liso de los cuerpos cavernosos debe…",
+    opts:[{t:"Relajarse (NO → GMPc)",c:true},{t:"Contraerse (α₁ → Ca²⁺)",c:false},{t:"No cambiar",c:false}],
+    fb:"Correcto. El NO relaja el músculo liso → entra sangre → erección. La contracción (simpática) hace lo contrario."});
+  qs.push({meta:"Excepción farmacológica", q:"¿Qué transmisor usa el simpático sobre las glándulas sudoríparas?",
+    opts:[{t:"Acetilcolina (excepción colinérgica)",c:true},{t:"Noradrenalina",c:false},{t:"Óxido nítrico",c:false}],
+    fb:"Correcto. Las glándulas sudoríparas son la excepción: simpático colinérgico (ACh sobre receptor M)."});
+  // generadas por órgano: NT y acción
+  const ntLabel={ACh:"Acetilcolina (ACh)",NA:"Noradrenalina (NA)",NO:"Óxido nítrico (NO)"};
+  Object.entries(ORGANS).forEach(([id,o])=>{
+    const base=o.micro.ntBase;
+    const wrong=["ACh","NA","NO"].filter(x=>x!==base);
+    qs.push({meta:"Transmisor · "+o.name, q:`¿Qué transmisor actúa sobre el efector de ${o.name.toLowerCase()}?`,
+      opts:[{t:ntLabel[base],c:true},{t:ntLabel[wrong[0]],c:false},{t:ntLabel[wrong[1]],c:false}],
+      fb:`Correcto: ${ntLabel[base]} → ${o.micro.rec} → ${o.micro.result}.`});
+    if(o.micro.muscle!=="glandula"){
+      const contract = o.micro.action==="contrae" || o.micro.action==="↑ ritmo";
+      qs.push({meta:"Acción · "+o.name, q:`Sobre el músculo de ${o.name.toLowerCase()}, la señal produce…`,
+        opts:[{t:contract?"Contracción":"Relajación",c:true},{t:contract?"Relajación":"Contracción",c:false},{t:"Sin respuesta (en estado sano)",c:false}],
+        fb:`Correcto. ${o.mech.replace(/<[^>]+>/g,"")}`.slice(0,180)+"…"});
+    }
+  });
+  pool=shuffle(qs);
+}
+function nextQuestion(){
+  if(pool.length===0) buildPool();
+  const q=pool.pop();
+  answered=false;
+  document.getElementById("qMeta").textContent=q.meta;
+  document.getElementById("qText").textContent=q.q;
+  const opts=document.getElementById("qOpts"); opts.innerHTML="";
+  shuffle(q.opts).forEach(op=>{
+    const b=document.createElement("button");
+    b.className="opt"; b.textContent=op.t;
+    b.addEventListener("click",()=>answer(b,op,q));
+    opts.appendChild(b);
+  });
+  document.getElementById("qFb").textContent="";
+  document.getElementById("qNext").hidden=true;
+}
+function answer(btn,op,q){
+  if(answered) return; answered=true; total++;
+  const all=[...document.querySelectorAll("#qOpts .opt")];
+  all.forEach(b=>{b.disabled=true;});
+  if(op.c){ btn.classList.add("correct"); hits++; streak++; }
+  else { btn.classList.add("wrong"); streak=0;
+    all.find(b=>b.textContent===q.opts.find(o=>o.c).t)?.classList.add("correct"); }
+  document.getElementById("qFb").innerHTML=(op.c?"<b>✓ Bien.</b> ":"<b>✕ Repasa.</b> ")+q.fb;
+  document.getElementById("scHit").textContent=hits;
+  document.getElementById("scTot").textContent=total;
+  document.getElementById("scStreak").textContent=streak;
+  document.getElementById("qNext").hidden=false;
+}
+document.getElementById("qNext").addEventListener("click",nextQuestion);
+
+/* ============== INIT ============== */
+refreshTabs();
+render();
+renderPene();
+buildPool();
+nextQuestion();
+// comparación estática sano vs Shy-Drager (sección dedicada)
+document.getElementById("peneCmpOk").outerHTML = peneMacroSVG(PHASES[1], true).replace('<svg ','<svg id="peneCmpOk" ');
+document.getElementById("peneCmpBad").outerHTML = peneMacroSVG(PHASES[1], false).replace('<svg ','<svg id="peneCmpBad" ');
+</script>
+</body>
+</html>
